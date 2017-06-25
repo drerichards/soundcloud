@@ -1,97 +1,100 @@
 'use strict'
 
-const renderPlaylistDisplay = () => { //shows the UI
+const renderPlaylistDisplay = () => { //shows the UI and all content
     SC.initialize({
-        client_id: 'fd4e76fc67798bfa742089ed619084a6'
+        client_id: fd4e76fc67798bfa742089ed619084a6
     });
 
     let musicList = document.getElementById('musicTitles')
     let playerControls = document.getElementById('playerControls')
-    let playerAudio = document.getElementById('playerAudio')
+    let audioPlayer = document.getElementById('audioPlayer')
     let currentSong = document.getElementsByClassName('currentSong')[0]
     let musicStatus = document.getElementsByClassName('musicStatus')[0]
-    let songIndexCounter = 0
+    let btnControls = document.querySelectorAll('button[data-function]')
     let input = document.getElementById('inputQuery');
-            let playlistSource = []
+    let songIndexCounter = 0
+    let playlistSource = []
 
-    // let songPlayingName = playlistSource[songIndexCounter][0]
-    // playerAudio.src = playlistSource[songIndexCounter][1]
-    let playlistFile
-
-    playerAudio.addEventListener('ended', () => {
+    audioPlayer.addEventListener('ended', () => { //plays next song in list when current tracks stops
         if (songIndexCounter < playlistSource.length - 1) {
             songIndexCounter = songIndexCounter + 1
         } else songIndexCounter = 0
         musicStatus.innerHTML = `Playing`
         currentSong.innerHTML = playlistSource[songIndexCounter][0]
-        playerAudio.src = playlistSource[songIndexCounter][1]
-        playerAudio.play()
+        audioPlayer.src = playlistSource[songIndexCounter][1]
+        audioPlayer.play()
     })
 
-    let jukebox = { //audio controls
-        search: (searchTerm) => {
-            if (searchTerm != '') {
-                playlistSource = []
-                musicList.innerHTML = ''
-                SC.get('/tracks', {
-                    q: searchTerm
-                }).then((tracks) => {
-                    for (let i = 0; i < tracks.length; i++) {
-                        playlistSource.push([tracks[i].title, tracks[i].id, tracks[i].artwork_url])
-                    }
-                    populatePlaylistDisplay()
-                    playerAudioplaylistSource[songIndexCounter][1]        
-                    SC.stream('/tracks/' + playlistSource[songIndexCounter][1]).then(function (playerAudio) {
-                        playerAudio.play();
-                    });            
-                    jukebox.play()
-                });
-            } else alert('Please enter a value')
-        },
-        play: () => {
+    class Jukebox {
+        constructor(player) {
+            this.player = player
+        }
+        play() {
+            // alert(0)
+            console.log(player)
             musicStatus.innerHTML = `Playing`
-            playerAudio.play()
-        },
-        pause: () => {
-            playerAudio.pause()
+            currentSong.innerHTML = playlistSource[songIndexCounter][0]
+            player.play()
+        }
+        pause() {
+            // alert(0)
             musicStatus.innerHTML = `Paused`
-        },
-        restart: () => {
-            playerAudio.currentTime = 0
-            playerAudio.play()
+            player.pause()
+        }
+        restart() {
+            // alert(0)
             musicStatus.innerHTML = `Restarting Song`
-        },
-        previous: () => {
+            player.currentTime = 0
+            player.play()
+        }
+        previous() {
             (songIndexCounter === 0) ? songIndexCounter = playlistSource.length - 1: songIndexCounter--
-                playerAudio.src = playlistSource[songIndexCounter][1]
+                player.src = playlistSource[songIndexCounter][1]
             currentSong.innerHTML = playlistSource[songIndexCounter][0]
-            jukebox.play()
-        },
-        next: () => {
+            player.play()
+        }
+        next() {
             (songIndexCounter === playlistSource.length - 1) ? songIndexCounter = 0: songIndexCounter++
-                playerAudio.src = playlistSource[songIndexCounter][1]
+                player.src = playlistSource[songIndexCounter][1]
             currentSong.innerHTML = playlistSource[songIndexCounter][0]
-            jukebox.play()
+            player.play()
         }
     }
 
-    let clickSongSelection = (playlistIndex) => {
-        jukebox.pause()
+    let search = (searchTerm) => {
+        if (searchTerm != '') {
+            playlistSource = [] //clears playlist with each new search
+            musicList.innerHTML = ''
+            SC.get('/tracks', {
+                q: searchTerm
+            }).then((tracks) => {
+                populatePlaylistDisplay(tracks)//pass queried tracks into func to display
+                SC.stream('/tracks/' + playlistSource[songIndexCounter][1]).then(function (player) {
+                    let scJukebox = new Jukebox(player) //create new instance of Jukebox class and pass in SC player
+                    scJukebox.play(); //this should play audio
+                    for (let i = 0; i < btnControls.length; i++) { //calls functions of the class instance
+                        btnControls[i].addEventListener('click', (e) => scJukebox[e.target.getAttribute('data-function')]())
+                    }
+                    let playlistTracks = document.querySelectorAll('li') //dynamically creates var for tracks
+                    for (let i = 0; i < playlistTracks.length; i++) { //makes each track clickable
+                        playlistTracks[i].addEventListener('click', (e) => clickSongSelection(e.target.getAttribute('data-index')))
+                    }
+                });
+            });
+        } else alert('Please enter a value')//if no input entry
+    }
+
+    let clickSongSelection = (playlistIndex) => { //when new song from playlist selected
+        scJukebox.pause()
         songIndexCounter = parseInt(playlistIndex)
         currentSong.innerHTML = playlistSource[songIndexCounter][0]
-         SC.stream('/tracks/' + playlistSource[songIndexCounter][1]).then(function (playerAudio) {
-                        playerAudio.play();
-                    });  
-        jukebox.play()
     }
 
-    let functionControl = (functionCommand, searchTerm) => {
-        currentSong.innerHTML = playlistSource[songIndexCounter][0]
-        jukebox[functionCommand](searchTerm)
-    }
-
-    let populatePlaylistDisplay = () => {
-        for (let i = 0; i < playlistSource.length; i++) { //displays playlist
+    let populatePlaylistDisplay = (tracks) => { //displays playlist from search
+        for (let i = 0; i < tracks.length; i++) {
+            playlistSource.push([tracks[i].title, tracks[i].id, tracks[i].artwork_url])
+        }
+        for (let i = 0; i < playlistSource.length; i++) {
             let li = document.createElement('li')
             let musicTitles = document.createTextNode(playlistSource[i][0])
             li.appendChild(musicTitles)
@@ -100,25 +103,10 @@ const renderPlaylistDisplay = () => { //shows the UI
         }
     }
 
-    jukebox.play()
-    // currentSong.innerHTML = songPlayingName
+    document.getElementById('search').onclick = () => search(input.value) //initiates search
 
-    document.getElementById('musicTitles').onclick = (e) => clickSongSelection(e.target.getAttribute('data-index'))
-    document.getElementsByTagName('button').onclick = (e) => functionControl(e.target.getAttribute('data-function'))
-    document.getElementById('search').onclick = () => {
-
-        jukebox.search(input.value)
-    }
-
-    // document.addEventListener("DOMContentLoaded", function (event) {
-    // input.addEventListener('keyup', function (evt) {
-    // search(input.value);
-    // jukebox.search(input.value)
-
-    // })
-    // });
 }
 
 {
-    renderPlaylistDisplay()
+    renderPlaylistDisplay() //calls main function IIFE
 }
