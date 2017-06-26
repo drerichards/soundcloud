@@ -7,14 +7,16 @@ const renderPlaylistDisplay = () => { //shows the UI and all content
 
     let musicList = document.getElementById('musicTitles')
     let playerControls = document.getElementById('playerControls')
-    let audioPlayer = document.getElementById('audioPlayer')
-    let currentSongTitle = document.getElementsByClassName('currentSongTitle')[0]
-    let musicStatus = document.getElementsByClassName('musicStatus')[0]
+    let currentSongTitle = document.querySelector('.currentSongTitle')
+    let trackImg = document.querySelector('img')
+    let userLink = document.querySelector('.userLink')
+    let musicStatus = document.querySelector('.musicStatus')
     let btnControls = document.querySelectorAll('button[data-function]')
     let input = document.getElementById('inputQuery');
     let songIndexCounter = 0
     let playlistSource = []
     let currentSong
+    let trackImage
 
     class Jukebox {
         constructor(player) {
@@ -22,7 +24,15 @@ const renderPlaylistDisplay = () => { //shows the UI and all content
         }
         play() {
             musicStatus.innerHTML = `Playing`
+            currentSongTitle.setAttribute('href', playlistSource[songIndexCounter][5])
             currentSongTitle.innerHTML = playlistSource[songIndexCounter][0]
+            if (playlistSource[songIndexCounter][2] != null) {
+                trackImage = playlistSource[songIndexCounter][2]
+            } else trackImage = 'default.png'
+            trackImg.setAttribute('src', trackImage)
+            userLink.setAttribute('href', playlistSource[songIndexCounter][4])
+            userLink.innerHTML = playlistSource[songIndexCounter][3]
+            this.player.seek(0)            
             this.player.play()
             this.continue()
         }
@@ -31,7 +41,7 @@ const renderPlaylistDisplay = () => { //shows the UI and all content
             this.player.pause()
         }
         restart() {
-            musicStatus.innerHTML = `Restarting Song`
+            musicStatus.innerHTML = `Song Restarted`
             this.player.seek(0)
             this.player.play()
         }
@@ -57,7 +67,6 @@ const renderPlaylistDisplay = () => { //shows the UI and all content
             })
         }
     }
-
 
     let scStream = (songPlaying) => {
         SC.stream('/tracks/' + songPlaying).then(function (player) {
@@ -96,8 +105,9 @@ const renderPlaylistDisplay = () => { //shows the UI and all content
 
     let populatePlaylistDisplay = (tracks) => { //displays playlist from search
         for (let i = 0; i < tracks.length; i++) {
-            playlistSource.push([tracks[i].title, tracks[i].id, tracks[i].artwork_url])
+            playlistSource.push([tracks[i].title, tracks[i].id, tracks[i].artwork_url, tracks[i].user.username, tracks[i].user.permalink_url, tracks[i].permalink_url])
         }
+        console.log(tracks[0])
         for (let i = 0; i < playlistSource.length; i++) {
             let li = document.createElement('li')
             let musicTitles = document.createTextNode(playlistSource[i][0])

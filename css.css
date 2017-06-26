@@ -5,19 +5,37 @@
     padding: 5%;
 }
 
-#playerControls, aside {
+#playerControls,
+aside {
     display: flex;
     flex-basis: 100%;
     justify-content: center;
 }
-#playerControls{
+
+#playerControls {
     display: block;
     text-align: center;
 }
+
+#inputQuery {
+    margin-bottom: 2%;
+}
+
+.currentSongTitle {
+    display: block;
+}
+
+img {
+    width: 15%;
+    display: block;
+    margin: 0 auto;
+}
+
 li {
     width: 20em;
 }
-li:hover{
+
+li:hover {
     cursor: pointer;
     font-weight: 700;
 }
